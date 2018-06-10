@@ -27,4 +27,49 @@ class Switch extends Subdevice {
   }
 }
 
-module.exports = Switch
+const STEP_TIMEOUT = 2000;
+class Switch86 extends Subdevice {
+  constructor(opts) {
+    super({sid: opts.sid, type: 'switch'});
+    this.step = 0;
+    this.stepTime = Date.now();
+  }
+
+  _handleState(state) {
+    super._handleState(state);
+
+    if(state.channel_0) {
+      this.step = Date.now() - this.stepTime < STEP_TIMEOUT ? ++this.step : 1;
+      this.stepTime = Date.now();
+      this.emit('click', this.step);
+    }
+  }
+}
+
+class Switch86Double extends Subdevice {
+  constructor(opts) {
+    super({sid: opts.sid, type: 'switch'});
+    this.step0 = 0;
+    this.step1 = 0;
+    this.stepTime0 = Date.now();
+    this.stepTime1 = Date.now();
+  }
+
+  _handleState(state) {
+    super._handleState(state);
+
+    if(state.channel_0 == 'click') {
+      this.step0 = Date.now() - this.stepTime0 < STEP_TIMEOUT ? ++this.step0 : 1;
+      this.stepTime0 = Date.now();
+      this.emit('clickLeft', this.step0);
+    }
+
+    if(state.channel_1 == 'click') {
+      this.step1 = Date.now() - this.stepTime1 < STEP_TIMEOUT ? ++this.step1 : 1;
+      this.stepTime1 = Date.now();
+      this.emit('clickRight', this.step1);
+    }
+  }
+}
+
+module.exports = {Switch, Switch86, Switch86Double};

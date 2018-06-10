@@ -33,8 +33,14 @@ aqara.on('gateway', (gateway) => {
         break
       case 'switch':
         console.log(`  Switch`)
-        device.on('click', () => {
-          console.log(`${device.getSid()} is clicked`)
+        device.on('click', (step) => {
+          console.log(`${device.getSid()} is clicked, step ${step}`)
+        })
+        device.on('clickLeft', (step) => {
+          console.log(`${device.getSid()} left button is clicked, step ${step}`)
+        })
+        device.on('clickRight', (step) => {
+          console.log(`${device.getSid()} right button is clicked, step ${step}`)
         })
         device.on('doubleClick', () => {
           console.log(`${device.getSid()} is double clicked`)
