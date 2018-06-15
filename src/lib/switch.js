@@ -27,7 +27,7 @@ class Switch extends Subdevice {
   }
 }
 
-const STEP_TIMEOUT = 2000;
+const STEP_TIMEOUT = 1000;
 class Switch86 extends Subdevice {
   constructor(opts) {
     super({sid: opts.sid, type: 'switch'});
