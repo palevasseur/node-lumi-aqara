@@ -41,6 +41,14 @@ class Gateway extends events.EventEmitter {
     }, GATEWAY_HEARTBEAT_INTERVAL_MS * GATEWAY_HEARTBEAT_OFFLINE_RATIO)
   }
 
+  _addSubDevice(sid, subdevice, state) {
+    if (subdevice) {
+      this._subdevices.set(sid, subdevice);
+      subdevice._handleState(state);
+      this.emit('subdevice', subdevice);
+    }
+  }
+
   _handleMessage (msg) {
     let sid
     let type
@@ -58,60 +66,56 @@ class Gateway extends events.EventEmitter {
         }
         break
       case 'read_ack':
-        sid = msg.sid
-        type = msg.model
-        state = JSON.parse(msg.data)
+        sid = msg.sid;
+        type = msg.model;
+        state = JSON.parse(msg.data);
 
         if (sid === this._sid) { // self
-          this._handleState(state)
+          this._handleState(state);
 
-          this._ready = true
+          this._ready = true;
           this.emit('ready')
         } else {
-          let subdevice
           switch (type) {
             case 'magnet':
             case 'sensor_magnet.aq2':
-              subdevice = new Magnet({ sid })
-              break
+              this._addSubDevice(sid, new Magnet({ sid }), state);
+              break;
             case 'switch':
             case 'sensor_switch.aq2':
-              subdevice = new Switch({ sid })
-              break
+              this._addSubDevice(sid, new Switch({ sid }), state);
+              break;
             case '86sw1':
-              subdevice = new Switch86({ sid })
-              break
+              this._addSubDevice(sid, new Switch86({ sid }), state);
+              break;
             case '86sw2':
-              subdevice = new Switch86Double({ sid })
-              break
+              const sid_left = sid + '_left';
+              this._addSubDevice(sid_left, new Switch86Double({ sid: sid_left }), state);
+              const sid_right = sid + '_right';
+              this._addSubDevice(sid_right, new Switch86Double({ sid: sid_right }), state);
+              break;
             case 'motion':
             case 'sensor_motion.aq2':
-              subdevice = new Motion({ sid })
-              break
+              this._addSubDevice(sid, new Motion({ sid }), state);
+              break;
             case 'sensor_ht':
             case 'weather.v1':
-              subdevice = new Sensor({ sid })
-              break
+              this._addSubDevice(sid, new Sensor({ sid }), state);
+              break;
             case 'sensor_wleak.aq1':
-              subdevice = new Leak({ sid })
-              break
+              this._addSubDevice(sid, new Leak({ sid }), state);
+              break;
             case 'cube':
-              subdevice = new Cube({ sid })
-              break
+              this._addSubDevice(sid, new Cube({ sid }), state);
+              break;
             case 'smoke':
-              subdevice = new Smoke({ sid })
-              break
+              this._addSubDevice(sid, new Smoke({ sid }), state);
+              break;
             default:
               return false
           }
-
-          if (subdevice) {
-            this._subdevices.set(msg.sid, subdevice)
-            subdevice._handleState(state)
-            this.emit('subdevice', subdevice)
-          }
         }
-        break
+        break;
       case 'heartbeat':
         if (msg.sid === this._sid) {
           this._refreshKey(msg.token)
@@ -122,7 +126,20 @@ class Gateway extends events.EventEmitter {
         state = JSON.parse(msg.data)
         if (msg.sid === this._sid) { this._handleState(state) }// self
         else {
-          const subdevice = this._subdevices.get(msg.sid)
+
+          let sid = msg.sid;
+
+          // todo: remove this hack for double switch 86sw2
+          if(msg.model == '86sw2') {
+            if(state.channel_0) {
+              sid += '_left';
+            }
+            else if (state.channel_1) {
+              sid += '_right';
+            }
+          }
+
+          const subdevice = this._subdevices.get(sid)
           if (subdevice) {
             subdevice._handleState(state)
           } else {

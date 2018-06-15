@@ -61,13 +61,13 @@ class Switch86Double extends Subdevice {
     if(state.channel_0 == 'click') {
       this.step0 = Date.now() - this.stepTime0 < STEP_TIMEOUT ? ++this.step0 : 1;
       this.stepTime0 = Date.now();
-      this.emit('clickLeft', this.step0);
+      this.emit('click', this.step0);
     }
 
     if(state.channel_1 == 'click') {
       this.step1 = Date.now() - this.stepTime1 < STEP_TIMEOUT ? ++this.step1 : 1;
       this.stepTime1 = Date.now();
-      this.emit('clickRight', this.step1);
+      this.emit('click', this.step1);
     }
   }
 }
